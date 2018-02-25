@@ -573,8 +573,8 @@ class PdfFileWriter(object):
                     return data
             else:
                 try:
-                    if data.pdf.stream.closed:
-                        raise ValueError("I/O operation on closed file: {}".format(data.pdf.stream.name))
+                    #if data.pdf.stream.closed:
+                    #    raise ValueError("I/O operation on closed file: {}".format(data.pdf.stream.name))
                     newobj = externMap.get(data.pdf, {}).get(data.generation, {}).get(data.idnum, None)
                     if newobj == None:
                         try:
