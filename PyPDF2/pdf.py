@@ -250,17 +250,17 @@ class PdfFileWriter(object):
 
         :param str fname: The filename to display.
         :param str fdata: The data in the file.
-      
+
         Reference:
         https://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/PDF32000_2008.pdf
         Section 7.11.3
         """
-        
+
         # We need 3 entries:
         # * The file's data
         # * The /Filespec entry
         # * The file's name, which goes in the Catalog
-        
+
 
         # The entry for the file
         """ Sample:
@@ -272,7 +272,7 @@ class PdfFileWriter(object):
         stream
         Hello world!
         endstream
-        endobj        
+        endobj
         """
         file_entry = DecodedStreamObject()
         file_entry.setData(fdata)
@@ -291,14 +291,14 @@ class PdfFileWriter(object):
         """
         efEntry = DictionaryObject()
         efEntry.update({ NameObject("/F"):file_entry })
-        
+
         filespec = DictionaryObject()
         filespec.update({
                 NameObject("/Type"): NameObject("/Filespec"),
                 NameObject("/F"): createStringObject(fname),  # Perhaps also try TextStringObject
                 NameObject("/EF"): efEntry
                 })
-                
+
         # Then create the entry for the root, as it needs a reference to the Filespec
         """ Sample:
         1 0 obj
@@ -309,13 +309,13 @@ class PdfFileWriter(object):
          /Names << /EmbeddedFiles << /Names [(hello.txt) 7 0 R] >> >>
         >>
         endobj
-        
+
         """
         embeddedFilesNamesDictionary = DictionaryObject()
         embeddedFilesNamesDictionary.update({
                 NameObject("/Names"): ArrayObject([createStringObject(fname), filespec])
                 })
-        
+
         embeddedFilesDictionary = DictionaryObject()
         embeddedFilesDictionary.update({
                 NameObject("/EmbeddedFiles"): embeddedFilesNamesDictionary
@@ -329,7 +329,7 @@ class PdfFileWriter(object):
         """
         Copy pages from reader to writer. Includes an optional callback parameter
         which is invoked after pages are appended to the writer.
-        
+
         :param reader: a PdfFileReader object from which to copy page
             annotations to this writer object.  The writer's annots
         will then be updated
@@ -373,7 +373,7 @@ class PdfFileWriter(object):
     def cloneReaderDocumentRoot(self, reader):
         '''
         Copy the reader document root to the writer.
-        
+
         :param reader:  PdfFileReader from the document root should be copied.
         :callback after_page_append
         '''
@@ -572,30 +572,33 @@ class PdfFileWriter(object):
                     self._sweepIndirectReferences(externMap, realdata)
                     return data
             else:
-                if data.pdf.stream.closed:
-                    raise ValueError("I/O operation on closed file: {}".format(data.pdf.stream.name))
-                newobj = externMap.get(data.pdf, {}).get(data.generation, {}).get(data.idnum, None)
-                if newobj == None:
-                    try:
-                        newobj = data.pdf.getObject(data)
-                        self._objects.append(None) # placeholder
-                        idnum = len(self._objects)
-                        newobj_ido = IndirectObject(idnum, 0, self)
-                        if data.pdf not in externMap:
-                            externMap[data.pdf] = {}
-                        if data.generation not in externMap[data.pdf]:
-                            externMap[data.pdf][data.generation] = {}
-                        externMap[data.pdf][data.generation][data.idnum] = newobj_ido
-                        newobj = self._sweepIndirectReferences(externMap, newobj)
-                        self._objects[idnum-1] = newobj
-                        return newobj_ido
-                    except ValueError:
-                        # Unable to resolve the Object, returning NullObject instead.
-                        warnings.warn("Unable to resolve [{}: {}], returning NullObject instead".format(
-                            data.__class__.__name__, data
-                        ))
-                        return NullObject()
-                return newobj
+                try:
+                    if data.pdf.stream.closed:
+                        raise ValueError("I/O operation on closed file: {}".format(data.pdf.stream.name))
+                    newobj = externMap.get(data.pdf, {}).get(data.generation, {}).get(data.idnum, None)
+                    if newobj == None:
+                        try:
+                            newobj = data.pdf.getObject(data)
+                            self._objects.append(None) # placeholder
+                            idnum = len(self._objects)
+                            newobj_ido = IndirectObject(idnum, 0, self)
+                            if data.pdf not in externMap:
+                                externMap[data.pdf] = {}
+                            if data.generation not in externMap[data.pdf]:
+                                externMap[data.pdf][data.generation] = {}
+                            externMap[data.pdf][data.generation][data.idnum] = newobj_ido
+                            newobj = self._sweepIndirectReferences(externMap, newobj)
+                            self._objects[idnum-1] = newobj
+                            return newobj_ido
+                        except ValueError:
+                            # Unable to resolve the Object, returning NullObject instead.
+                            warnings.warn("Unable to resolve [{}: {}], returning NullObject instead".format(
+                                data.__class__.__name__, data
+                            ))
+                            return NullObject()
+                    return newobj
+                except AttributeError:
+                    return NullObject()
         else:
             return data
 
