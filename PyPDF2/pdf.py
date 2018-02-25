@@ -598,7 +598,7 @@ class PdfFileWriter(object):
                             return NullObject()
                     return newobj
                 except AttributeError:
-                    return NullObject()
+                    return data
         else:
             return data
 
